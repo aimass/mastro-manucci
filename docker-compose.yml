@@ -1,0 +1,59 @@
+version: "3.7"
+
+services:
+  manucci:
+    build:
+      context: .
+    image: mastro-manucci
+    volumes:
+      - ./src:/var/www/app/
+    container_name: mastro-manucci-container
+    environment:
+      POSTGRES_DB_HOST: $PGHOST
+      POSTGRES_DB_PORT: $PGPORT
+      POSTGRES_DB_NAME: $PGDATABASE
+      POSTGRES_DB_USERNAME: $PGUSER
+      POSTGRES_DB_PASSWORD: $PGPASSWORD
+      MOJO_MODE: development
+      MOJO_RELOAD: 1
+    ports:
+      - 9230:3000
+    entrypoint: ["morbo", "-v", "/var/www/app/script/mastro_manucci"]
+    depends_on:
+       - manuccidb
+#  worker:
+#    build:
+#      context: .
+#    image: mastro-manucci
+#    volumes:
+#      - ./src:/var/www/app/
+#    container_name: mastro-manucci_worker
+#    environment:
+#      JOURNAL1_DB_HOST: postgres
+#      JOURNAL1_DB_PORT: 5432
+#      JOURNAL1_DB_NAME: mastro_manucci
+#      JOURNAL1_DB_USERNAME: moonshot_user
+#      JOURNAL1_DB_PASSWORD: CHANGE_AFTER_INSTALL
+#      MOJO_MODE: development
+#      MOJO_RELOAD: 1
+#    ports:
+#      - 9240:3000
+#    entrypoint: ["morbo", "-v", "/var/www/app/script/mastro_operaio"]
+
+  manuccidb:
+    build:
+      context: .
+      target: pgtapfinal
+    container_name: mastro-manucci-db-container
+    environment:
+      POSTGRES_DB: $PGDATABASE
+      POSTGRES_USER: $PGUSER
+      POSTGRES_PASSWORD: $PGPASSWORD
+    ports:
+      - '20032:5432'
+    volumes:
+      - ./database/A000_localbootstrap.ddl:/docker-entrypoint-initdb.d/localbootstrap.sql
+
+networks:
+  default:
+    name: mastro-manucci_network

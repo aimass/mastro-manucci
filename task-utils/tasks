@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+function dolocal () {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  docker compose down
+  docker compose build manuccidb
+  docker compose up --detach manuccidb
+  sleep 5
+  cd database
+  ./deploy.sh
+}
+
+function dbdeploy () {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  cd database
+  ./deploy.sh
+}
+
+function dbdestroy () {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  cd database
+  ./destroy.sh
+}
+
+function dotest () {
+  setenv 'local_env_common'
+  setenv 'local_env_run'
+  echo "P1 $1"
+  echo "P2 $2"
+  cd src
+  if [[ ! -z $1 && ! -z $2 ]]
+    then
+      prove -I lib/ t/$1 :: $2
+  elif [[ ! -z $1 ]]
+    then
+      prove -I lib/ t/$1
+  else
+    prove -I lib/ t/*
+  fi
+  cd ..
+}
+
+function dodbshell () {
+  setenv 'local_env_common'
+  dbshell $DB_CONTAINER_NAME
+}
+
+function doclean () {
+  setenv 'local_env_common'
+  setenv 'local_env_run'
+  ./gradlew clean --rerun-tasks
+}
+
+function dorealclean () {
+  yes | docker down
+  yes | docker system prune -a
+  yes | docker images -a
+  yes | docker images prune
+  yes | docker volume prune
+  yes | docker container prune
+  yes | docker network prune
+}
+
+function dodefault () {
+  echo "I don't know how to $1"
+  exit 1;
+}
+
+function launchidea () {
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "TODO: JCR"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+        open -n /Applications/IntelliJ\ IDEA.app
+  else
+    echo "Your OS $OSTYPE is not supported in this script (yet)"
+  fi
+}
+
+function subshellwithenv () {
+  if [[ -n ${TRICE_ENV} ]]
+  then
+    echo "You are already in $TRICE_ENV"
+    echo "Please type exit to exit the subshell and try again"
+    exit 1
+  fi
+  setenv $1
+  echo "You are now in the $TRICE_ENV environment."
+  exec $SHELL
+}
+
+function setenv () {
+  set -a
+  source task-utils/local_env_common
+  source task-utils/$1
+  export TRICE_ENV=$1
+  set +a
+}

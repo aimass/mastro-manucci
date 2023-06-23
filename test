@@ -1,0 +1,8 @@
+#/bin/bash
+TEST=$1
+CONTAINER_ID=`./getledgerid`
+if [ ! -z "$2" ]
+then
+    TEST="$TEST $2 $3"
+fi
+docker exec -it $CONTAINER_ID bash prove -v -I lib/ -I t/ t/$TEST

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+source task-utils/getcontainerid
+source task-utils/dbshell
+source task-utils/tasks
+
+TASK=''
+if [[ -z $1 ]]
+then
+  echo "These are the tasks I can help you with:"
+  echo "dbup - initialize local development environment, starts DB only"
+  echo "local - same as dbup (legacy)"
+  echo "intellij - launch intellij with local development environment"
+  echo "build - builds the code for local tests"
+  echo "buildldap - builds and seeds the trice ldap instance"
+  echo "test - runs all tests (database and code)"
+  echo "run - runs AuthPro locally (not on Docker but on your shell)"
+  echo "up - builds and brings AuthPro up in Docker"
+  echo "valapi - validates openapi file before generation"
+  echo "genapi - generates REST API layer based on the OpenAPI spec"
+  echo "gendal - generates Data Access Layer (DAL) based on the DB schema"
+  echo "clean - clean mostly java code"
+  echo "realclean - cleans builds and Docker deeply"
+  echo "dbshell - open a shell inside the Docker db container"
+  echo "envadmin - sets your shell env to DB admin"
+  echo "envrun - sets your shell env to DB runtime"
+  echo "dbdeploy - deploy the DB on an empty database"
+  echo -n "Please specify a task to perform: "
+  read -r TASK
+else
+  TASK=$1
+fi
+
+if [[ $TASK = "dbup" || $TASK = "local" ]]
+  then dolocal
+elif  [[ $TASK = "test" ]]
+  then dotest $2 $3
+elif  [[ $TASK = "run" ]]
+  then echo "TODO"
+elif  [[ $TASK = "up" ]]
+  then echo "TODO"
+elif  [[ $TASK = "dbshell" ]]
+  then dodbshell
+elif  [[ $TASK = "clean" ]]
+  then doclean
+elif  [[ $TASK = "realclean" ]]
+  then dorealclean
+elif  [[ $TASK = "envadmin" ]]
+  then subshellwithenv 'local_env_admin'
+elif  [[ $TASK = "envrun" ]]
+  then subshellwithenv 'local_env_run'
+elif  [[ $TASK = "envtest" ]]
+  then setenv 'local_env_run'
+elif  [[ $TASK = "dbdeploy" ]]
+  then dbdeploy
+elif  [[ $TASK = "dbdestroy" ]]
+  then dbdestroy
+else
+  dodefault $TASK
+fi
+

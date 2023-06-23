@@ -1,0 +1,12 @@
+#/bin/bash
+SERVICE=$1
+if [[ "$SERVICE" = "db" ]]
+then
+    CONTAINER_ID=`./getpostgresid`
+elif [[ "$SERVICE" = "wk" ]]
+then
+    CONTAINER_ID=`./getworkerid`;
+else
+    CONTAINER_ID=`./getledgerid`;
+fi
+docker exec -it $CONTAINER_ID bash

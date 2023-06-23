@@ -1,0 +1,4 @@
+#/bin/bash
+MODULE=$1
+CONTAINER_ID=`./getmojoid`
+docker exec -it $CONTAINER_ID cpanm $MODULE

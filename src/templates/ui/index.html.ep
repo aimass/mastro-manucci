@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title><%= title %></title></head>
+<body>
+    <h1>Main Menu</h1>
+    <ul>
+    <% for my $mi (@{$menu}) { %>
+        <li>
+         <%= button_to $mi->{text} => $mi->{link} %>
+        </li>
+        <% } %>
+    </ul>
+
+</body>
+</html>
