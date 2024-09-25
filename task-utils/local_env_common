@@ -5,6 +5,7 @@ BUILD_VERSION=0.0.1-SNAPSHOT
 BUILD_REVISION=$(git rev-parse HEAD)
 BUILD_TIMESTAMP=$( date '+%F_%H:%M:%S' )
 BUILD_PROJECT=mastro-manucci
+<<<<<<< HEAD
 AUTH_PROVIDER_1=authp1
 AUTH_PROVIDER_1_KEY=[key]
 AUTH_PROVIDER_1_SEC=[secret]
@@ -14,6 +15,17 @@ AUTH_PROVIDER_2=authp2
 AUTH_PROVIDER_2_KEY=[key]
 AUTH_PROVIDER_2_SEC=[secret]
 AUTH_PROVIDER_2_WKU=[wku]
+=======
+AUTH_PROVIDER_1=auth1
+AUTH_PROVIDER_1_KEY=ledger
+AUTH_PROVIDER_1_SEC=secret
+AUTH_PROVIDER_1_WKU=TODO
+AUTH_PROVIDER_1_ATK=1
+AUTH_PROVIDER_2=google
+AUTH_PROVIDER_2_KEY=foo
+AUTH_PROVIDER_2_SEC=bar
+AUTH_PROVIDER_2_WKU=https://accounts.google.com/.well-known/openid-configuration
+>>>>>>> dc713f8 (removed auth providers - pending development providers)
 AUTH_PROVIDER_2_ATK=0
 HTTPS_FORCE_REWRITE=0
 SESSION_EXPIRY=86400
