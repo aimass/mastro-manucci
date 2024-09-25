@@ -1,8 +1,0 @@
-# for application.properties
-SERVER_PORT=3000
-LOGGER_LEVEL=DEBUG
-DB_CONTAINER_NAME="mastro-manucci-db-container"
-PGNAMESPACE=manucci
-
-
-

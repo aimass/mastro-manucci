@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-function dbshell (){
-  CONTAINER_ID=$(getcontainerid $1)
-  docker exec -it $CONTAINER_ID bash
-}

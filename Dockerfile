@@ -19,17 +19,31 @@ RUN apk -U add \
 RUN mkdir -p /opt/pgtests
 COPY ./database/t/ /opt/pgtests
 
-FROM perl
+FROM ubuntu:rolling AS mastro-manucci
 ENV OS_LOCALE="en_US.UTF-8"
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get -y install perl cpanminus libmojolicious-perl libmojo-pg-perl libjson-xs-perl liblwp-protocol-https-perl \
+    libmojolicious-plugin-openapi-perl libdigest-sha-perl libemail-valid-perl libcrypt-jwt-perl libdata-uuid-perl \
+    libmojolicious-plugin-oauth2-perl libcrypt-openssl-bignum-perl libcrypt-openssl-rsa-perl libmojo-jwt-perl \
+    libnumber-format-perl libdatetime-perl
 RUN mkdir -p /var/www/app
 COPY ./cpanfile /var/www/app
 COPY ./src/ /var/www/app/
 WORKDIR /var/www/app
 RUN cpanm --installdeps .
-EXPOSE 9230
-EXPOSE 9240
-CMD ./script/mastro_manucci prefork -m production http://*:9230
-#CMD ./script/moonshot_worker prefork -m production http://*:9240
+
+# for /build endpoint. Use --build-arg to set these properly
+ARG BUILD_VERSION=${BUILD_VERSION:-buildversion}
+ENV BUILD_VERSION $BUILD_VERSION
+ARG BUILD_REVISION=${BUILD_REVISION:-buildrevision}
+ENV BUILD_REVISION $BUILD_REVISION
+ARG BUILD_TIMESTAMP=${BUILD_TIMESTAMP:-buildtimestamp}
+ENV BUILD_TIMESTAMP $BUILD_TIMESTAMP
+ARG BUILD_PROJECT=${BUILD_PROJECT:-buildproject}
+ENV BUILD_PROJECT $BUILD_PROJECT
+
+EXPOSE 3000
+CMD ./script/mastro_manucci prefork -m production -w 20 -c 10 -l http://*:3000
 
 
 

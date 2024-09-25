@@ -1,6 +1,0 @@
-# database admin credentials
-PGDATABASE=local
-PGUSER=manucci_admin
-PGPASSWORD=ONLY_FOR_LOCAL_DEVELOPMENT
-PGPORT=20032
-PGHOST=127.0.0.1

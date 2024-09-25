@@ -1,2 +1,0 @@
-#/bin/bash
-docker ps -f name=^/mastro-manucci_worker -q

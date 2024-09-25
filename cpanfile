@@ -1,15 +1,20 @@
-requires 'Mojolicious'                      => '0';
-requires 'Mojo::Pg'                         => '0';
-requires 'JSON::XS'                         => '0';
-requires 'JSON'                             => '0';
-requires 'LWP'                              => '0';
-requires 'LWP::Protocol::https'             => '0';
-requires 'DBI'                              => '0';
-requires 'DBD::Pg'                          => '0';
-requires 'Mojolicious::Plugin::OpenAPI'     => '0';
-requires 'Mojolicious::Plugin::SwaggerUI'   => '0';
-
-
-
-
-
+requires 'Mojolicious'                        => '0';
+requires 'Mojo::Pg'                           => '0';
+requires 'JSON::XS'                           => '0';
+requires 'JSON'                               => '0';
+requires 'LWP'                                => '0';
+requires 'LWP::Protocol::https'               => '0';
+requires 'DBI'                                => '0';
+requires 'DBD::Pg'                            => '0';
+requires 'Mojolicious::Plugin::OpenAPI'       => '0';
+requires 'Mojolicious::Plugin::SwaggerUI'     => '0';
+requires 'Test::Named'                        => '0';
+requires 'Const::Fast'                        => '0';
+requires 'Data::UUID'                         => '0';
+requires 'Mojolicious::Plugin::OAuth2'        => '0';
+requires 'Mojolicious::Plugin::OAuth2::Mock'  => '0';
+requires 'Crypt::OpenSSL::Bignum'             => '0';
+requires 'Crypt::OpenSSL::RSA'                => '0';
+requires 'Mojo::JWT'                          => '0';
+requires 'Number::Format'                     => '0';
+requires 'DateTime'                           => '0';

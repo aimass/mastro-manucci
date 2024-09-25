@@ -1,17 +1,28 @@
-# README #
+# Mastro Manucci LedgeX (MMLX) #
+High Performance Double Entry Ledger µService
 
-Mastro Manucci is a simple, high performance and lightweight General Ledger Microservice.
+*Unleash the Power of Precision & Speed in Financial Record Keeping!*
 
-It provides a write-once+read-only simple double-entry accounting system that can also track changes in state and link
-longer-lived transactions. The API is designed to facilitate the integration of systems that are built around
-Event Driven Process Chains and/or Workflow systems, or with simpler systems that just need a double entry GL to bolt-on
-to their existing stack.
+Dive into the future of accounting with **Mastro Manucci High-Performance Ledger Service (MMHLS)** – where innovation meets tradition. This isn't just a ledger service; it's your financial fortress, engineered for the 21st century.
 
+## Why MMHLS?
+
+- **Real-Time, Double-Entry Magic**: Say goodbye to outdated ledgers. MMHLS operates on cutting-edge, real-time double-entry, ensuring your books are not just kept, but masterfully maintained.
+- **Hyper-Concurrency & TPS**: Built tough for high traffic, MMHLS laughs in the face of thousands of transactions per second, keeping your data flowing smoothly, no matter the volume.
+- **Scalable & Robust**: From startups to enterprises, MMHLS grows with you, handling vast data with elegance and efficiency.
+- **RESTful Microservice Architecture**: Seamlessly integrate MMHLS into your ecosystem. It's designed to play well with others, ensuring your systems sing in harmony.
+
+MMHLS isn't just about numbers; it's about empowering your business with a ledger service that's as dynamic and agile as your operations. Welcome to the next generation of ledger services—where performance isn't just a feature, it's our middle name.
+
+
+
+---
+*Feel free to explore the repository for installation instructions, usage examples, and how to contribute to the project!*
 # SYNOPSIS #
 
 ```shell script
-docker-compose build
-docker-compose up
+./task local 
+./task up
 ```
 
 To reset the database and start over
@@ -51,81 +62,80 @@ accounts have any transactions, the system imposes restrictions on altering or d
 
 ## JOURNAL ##
 
-The Journal is the core of the system. It is heavily protected by security, audit and integrity rules and the information
-contained in it is write once and cannot be altered in any way. This is also true for other tables of the system
-as well.
+At the heart of MMLX is the Journal, where every transaction is not just recorded but 
+enshrined with unalterable integrity. This core system component is fortified by:
 
+* **Ironclad Security**: With robust access controls, ensuring only the right 
+  hands can touch the data.
+* **Immutable Audit Trails**: Each entry and modification is logged, creating a 
+  verifiable history of all financial activities.
+* **Data Sanctity**: Once data enters the Journal, it becomes immutable. Like 
+  inscriptions on stone, it remains untouched, upholding the principle of write 
+  once, never alter across all system tables. This commitment to integrity 
+  ensures your financial history is as accurate as the day it was recorded.
 
-## BOOKS ##
+## SUB ACCOUNTS ##
 
-Books allow the system to have detailed views on a single account. Books can also act as sub-accounts as many books can
-reference a single COA entry. For example customers and vendors can have individual books, all mapping to single COA
-AR and AP accounts. The combination of COA headers, accounts and Books can model basically any business to as much
-detail as needed whilst keeping the main COA simple, effective and clean.
+Sub-accounts allow detailed journal entries for entities. A bub-accounts must be tied to a single entity and one entity can have 
+one or more sub-accounts. Each sub-account must also be tied to a single COA account. All journal entries always refer to
+a single COA account and optionally to a sub-account.
+
 
 ## TRANSACTIONS AND DOCUMENTS ##
 
+MMLX is provided with a generic master-detail transaction document. This 
+generic construct can be used to model transaction artifacts such as 
+Customer Invoices, Sales Invoices, Purchase Orders etc. The actual 
+implemenations are written in business specific APIs called BAPIS.
+
+Transactions can be grouped together to form complex parent-child and/or 
+multi-step transactions allowing the Ledger's transaction document to model 
+exactly your business workflows.
+
+## EXTENDING AND CUSTOMIZING WITH BAPIs ##
+
+MMLX has an external REST API which is defined in OpenAPI v3. Every 
+interaction with the ledger engine can be performed
+with the REST API. This API provides an extension and customization mechanism called BAPI (Business Application Interface).
+Users can create a BAPI by uploading a Perl module into the Bapi directory. The /bapi endpoint will dynamically load and
+execute the BAPI code without a need to restart the system.
+
+The BAPI code has access to every method in the OpenAPI spec, but instead of using HTTP, the BAPI code can use the internal
+APIs using the exported methods of Ledger.pm. All the methods in Ledger.pm are already wrapped with SQL transaction blocks.
+Thus, simple BAPIs act as macros to automate repetitive uses of the REST API, but using the internals APIs and taking
+full advantage of custom Perl code.
+
+### Advanced BAPIs ###
+
+For more advanced customizations, BAPIs also have access to exported methods of the Ledger sub-modules such as Balance.pm,
+Entity.pm, Journal.pm, SubAcct.pm and Transaction.pm. When using these methods, it is the BAPI's code responsibilty to wrap 
+procedural code in SQL transaction blocks. Finally, BAPIs also have access to the database connetion and can execute
+arbitrary SQL code. Nevertheless, it is recommended that this is only used for querying data, and always use the exported
+Ledger methods for any writing.  
+
+## GENERAL GUIDELINES FOR BAPI CODE ##
+
+### Variable Naming ###
+
+As mentioned above, all REST and internal APIs use the same semantics defined in the OpenAPI Specification. All public 
+methods and variables use camelCase. All internal ledger engin code uses lower case underscore variable names and methods
+(except for publicyly exported methods and parameters mentioned above).
+
+When writing BAPI code we recommend you follow the same . For REST and internal APIs use camelCase variables in your custom code as well as the camelCase names defined in the 
+OpenAPI Specification. For SQL code and variables that hold SQL column data directly use lower case underscore standard
+as emplyed in the database schema. 
 
 
-# Notes for Developers and Hackers #
+## Prerequisites
 
-## Temporarily Installing a CPAN Module to Test
-To temporarily install a CPAN module:
-```shell script
-./install Foo::Bar
 ```
-This will install the CPAN module on your running Mojo code. But be aware that if you down/up you will need
-to install gain. For permanent install edit the cpanfile.
-
-## To get the Mojo Container shell
-```shell script
-./shell
+TAP::Parser::SourceHandler::pgTAP
 ```
-
-## To get the Postgres shell
-```shell script
-./shell db
-```
-
-## DB Users
-If you are in the DB shell you don'' need to user passwords.
-```shell script
-psql -U moonshot_user mastro_manucci
-psql -U moonshot_admin mastro_manucci
-```
-
-## Quick Tests
-```shell script
-./test A350_API_Ledger.t :: rtp_use_case
-```
-
-
-
-# Features
-
-## Simple Model
-Based on the very basic accounting principles of Journal, Chart of Accounts, Account Books
-and Documents.
-
-Binary versions of DIA:
-
-http://dia-installer.de
-
-Macports:
-port install dia (requires XQuartz)
-
-
-## Scalable Data Model with Automatic Data Partitioning
-Blah
-
-## Full Audit and Security
-
-
 
 # LICENSE #
 
-Copyright 2021 The p2ee Project
+Copyright 2006-2021 The p2ee Project
 
 GL Design based on The p2ee Project  Copyright 2006-2023  GNU General Public License version 2.0 (GPLv2)
-borrowing models and accounting standards from the SQL-Ledger Project, licensed
-under the GNU GENERAL PUBLIC LICENSE Version 2 : https://www.sql-ledger.com/cgi-bin/nav.pl?page=misc/COPYING
+also borrowing ideas from the SQL-Ledger Project, licensed under the GNU GENERAL PUBLIC LICENSE Version 2 : 
+https://www.sql-ledger.com/cgi-bin/nav.pl?page=misc/COPYING

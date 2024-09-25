@@ -1,60 +1,68 @@
 #!/usr/bin/env bash
 
 source task-utils/getcontainerid
-source task-utils/dbshell
 source task-utils/tasks
 
 TASK=''
 if [[ -z $1 ]]
 then
   echo "These are the tasks I can help you with:"
-  echo "dbup - initialize local development environment, starts DB only"
-  echo "local - same as dbup (legacy)"
-  echo "intellij - launch intellij with local development environment"
-  echo "build - builds the code for local tests"
-  echo "buildldap - builds and seeds the trice ldap instance"
-  echo "test - runs all tests (database and code)"
-  echo "run - runs AuthPro locally (not on Docker but on your shell)"
-  echo "up - builds and brings AuthPro up in Docker"
-  echo "valapi - validates openapi file before generation"
-  echo "genapi - generates REST API layer based on the OpenAPI spec"
-  echo "gendal - generates Data Access Layer (DAL) based on the DB schema"
-  echo "clean - clean mostly java code"
-  echo "realclean - cleans builds and Docker deeply"
-  echo "dbshell - open a shell inside the Docker db container"
+  echo "local - destroys Docker artifacts, and redeploys a fresh DB Container"
+  echo "up - build and run Ledger in Docker Container"
+  echo "run - runs Ledger locally (requires local Perl and deps)"
+  echo "down - Stop and remove containers, networks and volumes"
+  echo "resetdb - resets the database in Docker DB Container"
+  echo "test - run single test/subtest or all tests"
+  echo "testdb - runs DB pgTAP tests"
+  echo "clean - cleans mostly code"
+  echo "moreclean - cleans Ledger Docker Images and Volumes"
+  echo "realclean - cleans everything and Docker deeply"
+  echo "apishell - open a shell inside the API container (if running)"
   echo "envadmin - sets your shell env to DB admin"
   echo "envrun - sets your shell env to DB runtime"
-  echo "dbdeploy - deploy the DB on an empty database"
+  echo "dbupdate - runs DB deltas"
+  echo "dbdestroy - runs the DB destroy scripts only"
+  echo "testpreshing - tests the complete preshing set"
   echo -n "Please specify a task to perform: "
   read -r TASK
 else
   TASK=$1
 fi
 
-if [[ $TASK = "dbup" || $TASK = "local" ]]
+
+if    [[ $TASK = "local" ]]
   then dolocal
+elif  [[ $TASK = "up" ]]
+  then doup
+elif  [[ $TASK = "run" ]]
+  then dorun
+elif  [[ $TASK = "down" ]]
+  then dodown
+elif  [[ $TASK = "resetdb" ]]
+  then doresetdb
 elif  [[ $TASK = "test" ]]
   then dotest $2 $3
-elif  [[ $TASK = "run" ]]
-  then echo "TODO"
-elif  [[ $TASK = "up" ]]
-  then echo "TODO"
-elif  [[ $TASK = "dbshell" ]]
-  then dodbshell
+elif  [[ $TASK = "testdb" ]]
+  then dotestdb
 elif  [[ $TASK = "clean" ]]
   then doclean
+elif  [[ $TASK = "moreclean" ]]
+  then domoreclean
 elif  [[ $TASK = "realclean" ]]
   then dorealclean
+elif  [[ $TASK = "apishell" ]]
+  then doapishell
 elif  [[ $TASK = "envadmin" ]]
   then subshellwithenv 'local_env_admin'
 elif  [[ $TASK = "envrun" ]]
   then subshellwithenv 'local_env_run'
-elif  [[ $TASK = "envtest" ]]
-  then setenv 'local_env_run'
-elif  [[ $TASK = "dbdeploy" ]]
-  then dbdeploy
+elif  [[ $TASK = "dbupdate" ]]
+  then dodbupdate
 elif  [[ $TASK = "dbdestroy" ]]
-  then dbdestroy
+  then dodbdestroy
+elif  [[ $TASK = "testpreshing" ]]
+  then dotestpreshing
+
 else
   dodefault $TASK
 fi

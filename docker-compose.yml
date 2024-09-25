@@ -1,26 +1,55 @@
 version: "3.7"
 
 services:
-  manucci:
+  ledgerapi:
     build:
       context: .
-    image: mastro-manucci
     volumes:
       - ./src:/var/www/app/
-    container_name: mastro-manucci-container
+    image: manucci-image
+    container_name: manucci-container
     environment:
-      POSTGRES_DB_HOST: $PGHOST
-      POSTGRES_DB_PORT: $PGPORT
-      POSTGRES_DB_NAME: $PGDATABASE
-      POSTGRES_DB_USERNAME: $PGUSER
-      POSTGRES_DB_PASSWORD: $PGPASSWORD
+      PGHOST: $PGHOST
+      PGPORT: $PGPORT
+      PGDATABASE: $PGDATABASE
       MOJO_MODE: development
       MOJO_RELOAD: 1
+      BUILD_VERSION: $BUILD_VERSION
+      BUILD_REVISION: $BUILD_REVISION
+      BUILD_TIMESTAMP: $BUILD_TIMESTAMP
+      BUILD_PROJECT: $BUILD_PROJECT
+      AUTH_PROVIDER_1: $AUTH_PROVIDER_1
+      AUTH_PROVIDER_1_KEY: $AUTH_PROVIDER_1_KEY
+      AUTH_PROVIDER_1_SEC: $AUTH_PROVIDER_1_SEC
+      AUTH_PROVIDER_1_WKU: $AUTH_PROVIDER_1_WKU
+      AUTH_PROVIDER_1_ATK: $AUTH_PROVIDER_1_ATK
+      AUTH_PROVIDER_2: $AUTH_PROVIDER_2
+      AUTH_PROVIDER_2_KEY: $AUTH_PROVIDER_2_KEY
+      AUTH_PROVIDER_2_SEC: $AUTH_PROVIDER_2_SEC
+      AUTH_PROVIDER_2_WKU: $AUTH_PROVIDER_2_WKU
+      AUTH_PROVIDER_2_ATK: $AUTH_PROVIDER_2_ATK
+      HTTPS_FORCE_REWRITE: $HTTPS_FORCE_REWRITE
+      SESSION_EXPIRY: $SESSION_EXPIRY
+      LEDGER_1: $LEDGER_1
+      LEDGER_1_SCHEMA: $LEDGER_1_SCHEMA
+      LEDGER_1_ROLE: $LEDGER_1_ROLE
+      LEDGER_1_PASSWORD: $LEDGER_1_PASSWORD
+      LEDGER_2: $LEDGER_2
+      LEDGER_2_SCHEMA: $LEDGER_2_SCHEMA
+      LEDGER_2_ROLE: $LEDGER_2_ROLE
+      LEDGER_2_PASSWORD: $LEDGER_2_PASSWORD
+      LEDGER_3: $LEDGER_3
+      LEDGER_3_SCHEMA: $LEDGER_3_SCHEMA
+      LEDGER_3_ROLE: $LEDGER_3_ROLE
+      LEDGER_3_PASSWORD: $LEDGER_3_PASSWORD
+      DEFAULT_LEDGER: $DEFAULT_LEDGER
     ports:
-      - 9230:3000
-    entrypoint: ["morbo", "-v", "/var/www/app/script/mastro_manucci"]
+      - 40080:40080
+    networks:
+      - ledger_network
+    entrypoint: ["morbo", "-v", "/var/www/app/script/mastro_manucci", "-l", "http://*:40080"]
     depends_on:
-       - manuccidb
+       - ledgerdb
 #  worker:
 #    build:
 #      context: .
@@ -40,20 +69,26 @@ services:
 #      - 9240:3000
 #    entrypoint: ["morbo", "-v", "/var/www/app/script/mastro_operaio"]
 
-  manuccidb:
+  ledgerdb:
     build:
       context: .
       target: pgtapfinal
-    container_name: mastro-manucci-db-container
+    image: manucci-db-image
+    container_name: manucci-db-container
     environment:
       POSTGRES_DB: $PGDATABASE
       POSTGRES_USER: $PGUSER
       POSTGRES_PASSWORD: $PGPASSWORD
     ports:
-      - '20032:5432'
+      - '40032:40032'
+    networks:
+      - ledger_network
     volumes:
-      - ./database/A000_localbootstrap.ddl:/docker-entrypoint-initdb.d/localbootstrap.sql
+      - ./database/localconfig.sh:/docker-entrypoint-initdb.d/1001_localconfig.sh
+      - ./database/AA000_localbootstrap.ddl:/docker-entrypoint-initdb.d/1002_localbootstrap.sql
+      - ./database/AA005_extensions.ddl:/docker-entrypoint-initdb.d/1003_extensions.sql
+      - ./database/AA006_audit_schema.ddl:/docker-entrypoint-initdb.d/1005_audit_schema.sql
 
 networks:
-  default:
-    name: mastro-manucci_network
+  ledger_network:
+    external: false
