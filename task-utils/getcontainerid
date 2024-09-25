@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+
+function getcontainerid() {
+  echo $(docker ps -f name=^/$1 -q)
+}

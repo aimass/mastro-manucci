@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+
+function doresetdb() {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  destroydbs
+  createdbs
+}
+
+function dolocal() {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  docker compose down
+  docker compose build ledgerdb
+  docker compose up --detach ledgerdb
+  sleep 5
+  createdbs
+}
+
+function doup() {
+  setenv 'local_env_common'
+  docker compose build ledgerapi
+  docker compose up --detach ledgerapi
+}
+
+function dodown() {
+  docker compose down --remove-orphans --volumes --rmi local
+}
+
+function dorun() {
+  setenv 'local_env_common'
+  morbo -w src/lib -w src/templates src/script/mastro_manucci -l http://[::]:40080
+}
+
+function dodbupdate() {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  cd database
+  ./deltas.sh
+  cd..
+}
+
+function dbdestroy() {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  cd database
+  ./destroy.sh
+  cd..
+}
+
+function dotestdb() {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  cd database
+  ./test.sh
+  cd..
+}
+
+function dotestpreshing() {
+  setenv 'local_env_common'
+  setenv 'local_env_admin'
+  cd database
+  set -a
+  source ./setup.sh
+  env
+  ${PGPROVE_CMD} ${PGPROVE_OPTS} t/destructive/account_ids_full.pg
+  set +1
+}
+
+function dotest() {
+  setenv 'local_env_common'
+  if [[ -n "${TEST_LEDGER}" ]]; then
+    DEFAULT_LEDGER=$TEST_LEDGER
+  fi
+  echo "P1 $1"
+  echo "P2 $2"
+  cd src
+  if [[ ! -z $1 && ! -z $2 ]]; then
+    prove -v -I lib/ t/$1 :: $2
+  elif [[ ! -z $1 ]]; then
+    prove -v -I lib/ t/$1
+  else
+    prove -v -I lib/ t/*
+  fi
+  cd ..
+}
+
+function doclean() {
+  setenv 'local_env_common'
+  #TODO: for perl
+}
+
+function domoreclean() {
+  docker compose down --remove-orphans --volumes
+  docker rmi $(docker images manucci-image --format "{{.ID}}")
+  docker rmi $(docker images manucci-db-image --format "{{.ID}}")
+  docker volume prune -f
+}
+
+function dorealclean() {
+  yes | docker down
+  yes | docker system prune -a
+  yes | docker images -a
+  yes | docker images prune
+  yes | docker volume prune
+  yes | docker container prune
+  yes | docker network prune
+}
+
+function dodefault() {
+  echo "I don't know how to $1"
+  exit 1
+}
+
+function setenv() {
+  set -a
+  source task-utils/local_env_common
+  source task-utils/$1
+  set +a
+}
+
+function createdbs() {
+  cd database
+  export PGNAMESPACE=audit_manucci
+  ./deploy_audit.sh
+  export PGNAMESPACE=ledger_one
+  ./deploy.sh
+  ./deltas.sh
+  export PGNAMESPACE=ledger_two
+  ./deploy.sh
+  ./deltas.sh
+  export PGNAMESPACE=ledger_three
+  ./deploy.sh
+  ./deltas.sh
+  cd ..
+}
+
+function destroydbs() {
+  cd database
+  export PGNAMESPACE=ledger_one
+  ./destroy.sh
+  export PGNAMESPACE=ledger_two
+  ./destroy.sh
+  export PGNAMESPACE=ledger_three
+  ./destroy.sh
+  cd ..
+}

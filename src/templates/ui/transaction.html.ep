@@ -1,0 +1,96 @@
+<%
+use Number::Format;
+my $f = new Number::Format(
+    -thousands_sep   => '.',
+    -decimal_point   => ',',
+    -int_curr_symbol => $ENV{INT_CURR_SYMBOL});
+%>
+<h1>Transaction Detail</h1>
+<table class="styled-table">
+    <tr>
+        <td>
+            Post date: <br/> <b><%= $transaction->{postDate} %></b>
+        </td>
+        <td>
+            Transaction ID: <br/> <b><%= $transaction->{transactionId} %></b>
+        </td>
+        <td>
+            Amount: <br/> <b><%= $f->format_price($transaction->{amount}) %></b>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Status: <br/> <b><%= $transaction->{state} %></b>
+        </td>
+        <td colspan="2">
+            Description: <br/> <b><%= $transaction->{description} %></b>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Reference: <br/> <b><%= $transaction->{reference} %></b>
+        </td>
+        <td>
+            Entity: <br/> <b><%= $transaction->{entity} %></b>
+        </td>
+        <td>
+            LinkedTo: <br/> <b><%= $transaction->{linkedTo} ? link_to $transaction->{linkedTo} => url_for(qq|$ui/transaction/$transaction->{linkedTo}|) : undef %></b>
+        </td>
+    <tr>
+        <td>
+            Group Type: <br/> <b><%= $transaction->{groupTyp} %></b>
+        </td>
+        <td>
+            Group Reference: <br/> <b><%= $transaction->{groupRef} %></b>
+        </td>
+        <td>
+            Group Status: <br/> <b><%= $transaction->{groupSta} %></b>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="4">
+            Metadata: <br/> <b><%= $transaction->{meta} %></b>
+        </td>
+    </tr>
+    <tr>
+        <b colspan="4">
+            Notes: <br/> <b><%= $transaction->{notes} %></b>
+        </td>
+    </tr>
+
+</table>
+
+<table class="styled-table">
+    <thead>
+    <tr>
+        <th>Row</th>
+        <th>Account</th>
+        <th>Line Description</th>
+        <th>Debit</th>
+        <th>Credit</th>
+        <th>Reference</th>
+        <th>Notes</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% my $row = 1; %>
+    <% for my $line (@{$transaction->{lines}}) { %>
+        <tr>
+            <td><%= $row %></td>
+            <td><%= $line->{account} %></td>
+            <td><%= $line->{description} %></td>
+            <td class="amount"><%= $line->{entry} eq 'DEBIT' ? $f->format_price($line->{amount}) : undef %></td>
+            <td class="amount"><%= $line->{entry} eq 'CREDIT' ? $f->format_price($line->{amount}) : undef %></td>
+            <td><%= $line->{reference} %></td>
+            <td><%= $line->{notes} %></td>
+        </tr>
+        <% $row++; %>
+    <% } %>
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="8"/>
+    </tr>
+
+    </tfoot>
+</table>

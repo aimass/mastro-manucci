@@ -1,0 +1,44 @@
+.idea
+.git
+_Deparsed_XSubs.pm
+jmeter.log
+
+# Ignore system files
+*~
+.DS_Store
+
+# Ignore local Perl artifacts
+blib/
+*.bak
+*.old
+/_eumm/
+/_alien/
+/.build/
+MYMETA.*
+
+# Ignore installed modules
+/.cpanm/
+local/
+
+# Ignore distribution artifacts
+*.tar.gz
+
+# Ignore .pl files
+/.pl
+
+# Ignore cover test outputs
+cover_db/
+
+# Ignore the .prove test harness folder
+.prove/
+
+# Ignore other test outputs
+*.out
+*.err
+*~
+*.swp
+*.bak
+*.old
+
+# If using Devel::Cover
+cover_db/

@@ -1,0 +1,4 @@
+<h1>Main Menu</h1>
+<% for my $mi (@{$menu}) { %>
+<p><%= button_to $mi->{text} => $mi->{link} %></p>
+<% } %>

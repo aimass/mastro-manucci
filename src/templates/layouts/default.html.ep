@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel="stylesheet" href="<%= $static =%>/mastro-manucci.css">
+  </head>
+  <body>
+  <div id="head" width="100%">
+    <img id=logo src="<%= $static =%>/manucci_logo.png" alt="Mastro Manucci Real-time Ledger" /></span>
+    <span class="align-right">
+      <% if (my $username = stash 'username') { %>
+          Logged in as: <%= $username %>
+      <% } %>
+      <%= link_to 'Main Menu' =>  $ui => (class => 'inline-element')%>
+      <%= link_to 'Logout' => "$ui/logout" => (class => 'inline-element')%>
+      <form action="<%= $ui =%>/ledgers" method="get" class="inline-element">
+        <select name="ledger">
+        <% my $selected_ledger = session 'selected_ledger'; %>
+        <% for my $ledger (@{$ledgers}) { %>
+            <% my $selected = $ledger eq $selected_ledger ? 'selected' : ''; %>
+            <option value="<%= $ledger =%>" <%= $selected =%>><%= $ledger =%></option>
+        <% } %>
+        </select>
+        <input type="submit" value="Change Ledger">
+      </form>
+    </span>
+  </div>
+
+  <div id="content"><%= content %></div>
+  </body>
+</html>

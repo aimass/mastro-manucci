@@ -1,0 +1,124 @@
+<%
+use Number::Format;
+my $f = new Number::Format(
+    -thousands_sep   => '.',
+    -decimal_point   => ',',
+    -int_curr_symbol => $ENV{INT_CURR_SYMBOL});
+
+my $subaccounts = 0;
+my $entities = 0;
+for my $account (@{$balance->{accounts}}) {
+    if (defined $account->{subaccount}) {
+        $subaccounts = 1;
+    }
+    if (defined $account->{entity}) {
+        $entities = 1;
+    }
+    last if $subaccounts && $entities;
+}
+my $filter = defined $balance->{filter} ? $balance->{filter} : { };
+%>
+<h1>Balance</h1>
+<form action="<%= $ui =%>/balance" method="get">
+<table class="styled-form">
+    <tr>
+        <td>
+            <label for="account">Account:</label>
+            <input type="text" id="account" name="account" value="<%= $filter->{account} %>">
+        </td>
+        <td>
+            <label for="entity">Entity:</label>
+            <input type="text" id="entity" name="entity" value="<%= $filter->{entity} %>" >
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <label for="subaccount">Sub Account:</label>
+            <input type="text" id="subaccount" name="subaccount" value="<%= $filter->{subaccount} %>">
+        </td>
+        <td>
+            <label for="inc_subaccount">Show sub accounts:</label>
+            <input type="checkbox" id="inc_subaccount" name="inc_subaccount" value=1 <%= $filter->{inc_subaccount} ? "checked" : '' %> >
+            <br/>
+            <label for="inc_entity">Show entities:</label>
+            <input type="checkbox" id="inc_entity" name="inc_entity" value=1 <%= $filter->{inc_entity} ? "checked" : '' %> >
+            <br/>
+            <label for="all">Show all accounts:</label>
+            <input type="checkbox" id="all" name="all" value=1 <%= $filter->{all} ? "checked" : '' %> >
+        </td>
+    </tr>
+    <tr>
+        <td/>
+        <td>
+            <input type="hidden" name="no_cache" value="1">
+            <input type="submit" value="Filter">
+        </td>
+    </tr>
+</table>
+</form>
+
+<table class="styled-table">
+    <thead>
+    <tr>
+        <th>Row</th>
+        <th>Account</th>
+        <% if ($subaccounts) { %>
+        <th>Sub Account</th>
+        <% } %>
+        <th>Account Description</th>
+        <% if ($subaccounts) { %>
+        <th>Sub Account Description</th>
+        <% } %>
+        <% if ($entities) { %>
+        <th>Entity</th>
+        <th>Entity Name</th>
+        <th>Entity Reference</th>
+        <% } %>
+
+        <th>Debit</th>
+        <th>Credit</th>
+        <th>Balance</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% my $row = 1; %>
+    <% for my $account (@{$balance->{accounts}}) { %>
+        <tr>
+            <td><%= $row %></td>
+            <td><%= link_to $account->{account} => url_for(qq|$ui/journal|)->query(account => $account->{account}) %></td>
+            <% if ($subaccounts) { %>
+            <td><%= $account->{subaccount} %></td>
+            <% } %>
+            <td><%= $account->{accountDesc} %></td>
+            <% if ($subaccounts) { %>
+            <td><%= $account->{subaccountDesc} %></td>
+            <% } %>
+            <% if ($entities) { %>
+            <td><%= $account->{entity} %></td>
+            <td><%= $account->{entityName} %></td>
+            <td><%= $account->{entityRef} %></td>
+            <% } %>
+
+            <td class="amount"><%= $f->format_price($account->{debits}) %></td>
+            <td class="amount"><%= $f->format_price($account->{credits}) %></td>
+            <td class="amount"><%= $f->format_price($account->{balance}) %></td>
+        </tr>
+        <% $row++; %>
+    <% } %>
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="3"/>
+        <% if ($subaccounts) { %>
+        <td colspan="2"/>
+        <% } %>
+        <% if ($entities) { %>
+        <td colspan="3"/>
+        <% } %>
+        <td class="amount"><%= $f->format_price($balance->{totalDebit}) %></td>
+        <td class="amount"><%= $f->format_price($balance->{totalCredit}) %></td>
+        <td/>
+    </tr>
+
+    </tfoot>
+</table>

@@ -1,0 +1,19 @@
+<h1>Authentication Required</h1>
+<h2>Please Select Identity Provider</h2>
+
+
+<% #FIXME: this needs to be changed to a for loop %>
+
+<%= link_to url_for(qq|$ui/login?provider=$ENV{AUTH_PROVIDER_1}|) => begin %>
+<%= image "$static/authpro_logo.png", alt => 'Login with AuthPro', class => 'idp_logo' %>
+<% end %>
+
+<br/>
+
+<% if ($ENV{AUTH_PROVIDER_2}) { %>
+<%= link_to url_for(qq|$ui/login?provider=$ENV{AUTH_PROVIDER_2}|) => begin %>
+<%= image "$static/google_logo.png", alt => 'Login with Google', class => 'idp_logo' %>
+<% end %>
+<% } %>
+
+

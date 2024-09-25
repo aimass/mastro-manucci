@@ -1,0 +1,25 @@
+
+
+BEGIN;
+
+SET search_path TO :'nspace', :'apinspace', public;
+set client_min_messages to 'debug';
+
+SELECT  plan(6);
+
+
+CREATE TYPE obfuscate_id_type AS (
+    obfuscate_id bigint
+);
+
+SELECT diag($$ The obfuscate_id function implictly tests luhn_generate, luhn_generate_checkdigit $$);
+SELECT row_eq($$ SELECT account_number(1) $$, ROW(9403811046)::obfuscate_id_type, 'Obfuscation logic 1' );
+SELECT row_eq($$ SELECT account_number(2) $$, ROW(24566721726)::obfuscate_id_type, 'Obfuscation logic 2' );
+SELECT row_eq($$ SELECT account_number(3) $$, ROW(11803002523)::obfuscate_id_type, 'Obfuscation logic 3' );
+SELECT row_eq($$ SELECT account_number(4294967290) $$, ROW(59125923355)::obfuscate_id_type, 'Obfuscation logic 4294967290' );
+SELECT row_eq($$ SELECT account_number(4294967291) $$, ROW(59125923348)::obfuscate_id_type, 'Obfuscation logic 4294967291' );
+SELECT row_eq($$ SELECT account_number(4294967292) $$, ROW(59125923298)::obfuscate_id_type, 'Obfuscation logic 4294967292' );
+
+
+ROLLBACK;
+

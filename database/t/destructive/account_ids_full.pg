@@ -1,0 +1,86 @@
+
+
+SET search_path TO :'nspace', :'apinspace', public;
+
+set client_min_messages to 'debug';
+
+SELECT * from no_plan();
+DROP TABLE IF EXISTS account_id_test;
+
+CREATE TABLE account_id_test (
+  id BIGSERIAL PRIMARY KEY ,
+  account_id BIGSERIAL UNIQUE
+);
+
+
+CREATE OR REPLACE PROCEDURE preshing_uniqueness_proof_pg(INOUT _val boolean DEFAULT false)
+    LANGUAGE plpgsql
+AS
+$$
+DECLARE
+    last_commit    bigint := 0;
+    lc             bigint := 1;
+BEGIN
+    RAISE DEBUG 'Test started at: %', (SELECT CURRENT_TIME);
+    LOOP
+        found := 0;
+        IF lc - last_commit > 100000 THEN
+            last_commit = lc;
+            RAISE DEBUG 'Tested % records so far %...', last_commit, (SELECT CURRENT_TIME);
+            COMMIT;
+        END IF;
+        INSERT INTO account_id_test (account_id) VALUES ((SELECT account_number(lc)));
+        IF lc > 5000000000 THEN
+            RAISE DEBUG 'Test succeeded at: %', (SELECT CURRENT_TIME);
+            EXIT;
+        END IF;
+        lc = lc + 1;
+    END LOOP;
+    SELECT true;
+END;
+$$;
+
+CALL preshing_uniqueness_proof_pg();
+
+-- CREATE OR REPLACE FUNCTION preshing_uniqueness_proof_pg ()
+--     RETURNS BOOLEAN AS $$
+-- DECLARE
+--     account_id_gen bigint;
+--     found bigint := 0;
+--     progress bigint := 0;
+--     lc bigint := 1;
+-- BEGIN
+--     RAISE DEBUG 'Test started at: %', (SELECT CURRENT_TIME);
+--     BEGIN
+--     LOOP
+--         found := 0;
+--         IF lc - progress > 10000 THEN
+--             progress = progress + lc;
+--             RAISE DEBUG 'Tested % records so far %...', progress, (SELECT CURRENT_TIME);
+--             COMMIT;
+--             BEGIN;
+--         END IF;
+--         SELECT account_number(lc) INTO account_id_gen;
+--         SELECT account_id from account_id_test WHERE account_id = account_id_gen INTO found;
+--         IF found != 0 THEN
+--             RAISE WARNING 'Found a repeated account_id:%', found;
+--             RAISE DEBUG 'Test failed at: %', (SELECT CURRENT_TIME));
+--             RETURN false;
+--         END IF;
+--         INSERT INTO account_id_test (account_id) VALUES (account_id_gen);
+--         IF lc > 5000000000 THEN
+--             RAISE DEBUG 'Test ended with succeeded at: %', (SELECT CURRENT_TIME);
+--             RETURN true;
+--         END IF;
+--         lc = lc + 1;
+--     END LOOP;
+-- END;
+-- $$ LANGUAGE plpgsql;
+-- END;
+
+
+SELECT diag($$ Starting full test of account id $$);
+--SELECT is((), true, 'No collisions found!' );
+
+
+

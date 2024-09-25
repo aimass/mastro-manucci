@@ -1,0 +1,8 @@
+<% if (my $error = stash 'error') { %>
+<h1>Renew Failed</h1>
+<p>Error: <%= $error %></p>
+<% } else { %>
+<h1>Renew OK</h1>
+<% my $username = stash 'username' || ''; %>
+<p><%= $username %></p>
+<% } %>

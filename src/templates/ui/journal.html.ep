@@ -1,0 +1,123 @@
+<%
+use Number::Format;
+my $f = new Number::Format(
+    -thousands_sep   => '.',
+    -decimal_point   => ',',
+    -int_curr_symbol => $ENV{INT_CURR_SYMBOL});
+my $criteria = defined $journal->{criteria} ? $journal->{criteria} : { };
+%>
+<h1>Journal Entries</h1>
+<form action="<%= $ui =%>/journal" method="get">
+    <table class="styled-form">
+        <tr>
+            <td>
+                <label for="account">Account:</label>
+                <input type="text" id="account" name="account" value="<%= $criteria->{account} %>">
+            </td>
+            <td>
+                <label for="subaccount">Sub Account:</label>
+                <input type="text" id="subaccount" name="subaccount" value="<%= $criteria->{subaccount} %>">
+            </td>
+            <td>
+                <label for="transactionId">Transaction:</label>
+                <input type="text" id="transactionId" name="transactionId" value="<%= $criteria->{transactionId} %>">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="from_date">From Date:</label>
+                <input type="text" id="from_date" name="from_date" value="<%= $criteria->{from_date} %>">
+            </td>
+            <td>
+                <label for="to_date">To Date:</label>
+                <input type="text" id="to_date" name="to_date" value="<%= $criteria->{to_date} %>">
+            </td>
+            <td>
+                <% my $order = $criteria->{order} ? $criteria->{order} : 'oldest_first'; %>
+                <label for="order">Order:</label>
+                <select name="order" id="order">
+                    <option value="oldest_first" <%= $order eq 'oldest_first' ? 'selected' : '' %>>Oldest First</option>
+                    <option value="newest_first" <%= $order eq 'newest_first' ? 'selected' : '' %>>Newest First</option>
+                </select>
+                <br/>
+                <% my $order_by = $criteria->{order_by} ? $criteria->{order_by} : 'postdate'; %>
+                <label for="order_by">Order by:</label>
+                <select name="order_by" id="order_by">
+                    <option value="postdate" <%= $order_by eq 'postdate' ? 'selected' : '' %>>Post Date</option>
+                    <option value="created" <%= $order_by eq 'created' ? 'selected' : '' %>>Created</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <% my $limit = $criteria->{limit} ? $criteria->{limit} : ($criteria->{limit} = 10); %>
+                <label for="limit">Rows per page:</label>
+                <select name="limit" id="limit">
+                    <option value="10" <%= $limit == 10 ? 'selected' : '' %>>10</option>
+                    <option value="50" <%= $limit == 50 ? 'selected' : '' %>>50</option>
+                    <option value="100" <%= $limit == 100 ? 'selected' : '' %>>100</option>
+                    <option value="200" <%= $limit == 200 ? 'selected' : '' %>>200</option>
+                    <option value="500" <%= $limit == 500 ? 'selected' : '' %>>500</option>
+                    <option value="1000" <%= $limit == 1000 ? 'selected' : '' %>>1000</option>
+                </select>
+            </td>
+            <td>
+                <% if ($journal->{has_more}) {
+                    $criteria->{starting_after} = $journal->{starting_after};
+                %>
+                 <label for="starting_after">Next Page Row Start:</label>
+                 <input size="4" type="text" id="starting_after" name="starting_after" value="<%= $journal->{starting_after} + 1 %>">
+                <% } %>
+            </td>
+            <td>
+                <span class="small-font">(Total records matched:<%= $journal->{total_rows} %>)</span>
+                <%
+                    my $criteria_string;
+                    map { $criteria_string .= qq|$_=$criteria->{$_},|} keys %{$criteria};
+                    chop $criteria_string;
+                %>
+                <input type="hidden" id="__criteria" name="__criteria" value="<%= $criteria_string %>">
+                <input type="submit" value="Filter">
+            </td>
+        </tr>
+    </table>
+</form>
+
+<table class="styled-table">
+    <thead>
+    <tr>
+        <th>Row</th>
+        <th>Post Date</th>
+        <th>Account</th>
+        <th>Sub Account</th>
+        <th>Account Description</th>
+        <th>Sub Account Description</th>
+        <th>Transaction</th>
+        <th>Debit</th>
+        <th>Credit</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% my $row = $journal->{offset} + 1; %>
+    <% for my $account (@{$journal->{data}}) { %>
+        <tr>
+            <td><%= $row %></td>
+            <td><%= $account->{postdate} %></td>
+            <td><%= $account->{account} %></td>
+            <td><%= $account->{subaccount} ? $account->{subaccount} : '' %></td>
+            <td><%= $account->{acctdesc} %></td>
+            <td><%= $account->{subaccountdesc} ? $account->{subaccountdesc} : '' %></td>
+            <td><%= link_to $account->{transactionId} => url_for(qq|$ui/transaction/$account->{transactionId}|) %></td>
+            <td class="amount"><%= $f->format_price($account->{debit}) %></td>
+            <td class="amount"><%= $f->format_price($account->{credit}) %></td>
+        </tr>
+        <% $row++; %>
+    <% } %>
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="9"/>
+    </tr>
+
+    </tfoot>
+</table>

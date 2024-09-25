@@ -1,0 +1,11 @@
+<% if (my $error = stash 'error') { %>
+<h1>Login Failed</h1>
+<p>Login failed: <%= $error %></p>
+<p>
+<%= link_to url_for(qq|$ui/auth|) => "Try again." %>
+</p>
+<% } else { %>
+<h1>Login OK</h1>
+<% my $username = stash 'username' || ''; %>
+<p><%= $username %></p>
+<% } %>

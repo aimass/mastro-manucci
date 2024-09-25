@@ -1,0 +1,7 @@
+# database admin credentials
+PGDATABASE=local
+PGUSER=manucci_admin
+PGPASSWORD=ONLY_FOR_LOCAL_DEVELOPMENT
+PGPORT=40032
+PGHOST=ledgerdb
+

@@ -1,0 +1,4 @@
+name: Mastro Manucci Ledger
+base_uri: /ledger/v1
+ui_uri: /ledger/ui
+version: 1.0.1-SNAPSHOT

@@ -1,0 +1,977 @@
+openapi: 3.0.3
+info:
+  title: Moonshot Ledger API
+  version: 1.0.0
+  description: Moonshot Ledger API OpenAPI3 Spec
+servers:
+  - url: 'http://localhost:40080/ledger/v1'
+    description: Local development. Please use URL provided by our Sysadmins.
+tags:
+  - name: Ledger Resources
+    description: Resource endpoints for Ledger Transactions
+  - name: Admin Resources
+    description: Resource endpoints for System Administration
+paths:
+  #############################################################
+  #             L E D G E R   E N D P O I N T S               #
+  #############################################################
+
+  /build:
+    get:
+      security:
+        - NONE: [ ]
+      summary: Retrieve build
+      tags:
+        - Build
+      description: Retrieves build details
+      operationId: getBuild
+      x-mojo-to: Main#getBuild
+      responses:
+        200:
+          description: Get build OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  version:
+                    nullable: true
+                    example: "0.0.1-SNAPSHOT"
+                    type: string
+                    description: "The service build version."
+                  revision:
+                    nullable: true
+                    example: "da03553ef6ec37d4ee020de13fa25e9bfb74cf75"
+                    type: string
+                    description: "The service revision."
+                  built:
+                    nullable: true
+                    example: "2023-08-30_22:14:29"
+                    type: string
+                    description: "The timestamp the service was built."
+                  project:
+                    nullable: true
+                    example: "mastro-manucci"
+                    type: string
+                    description: "The service name."
+
+
+  ###################################
+  ##     T R A N S A C T I O N     ##
+  ###################################
+
+  /transactions:
+    post:
+      tags:
+        - Ledger Resources
+      description: Creates a new transaction document/workflow
+      operationId: postTransaction
+      x-mojo-to: Main#postTransaction
+      requestBody:
+        description: Transaction Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTransaction'
+      responses:
+        '201':
+          description: document response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        default:
+          description: post document error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - Ledger Resources
+      description: Transaction Collection
+      operationId: getTransactions
+      x-mojo-to: Main#getTransactions
+      parameters:
+        - in: query
+          name: entity
+          schema:
+            type: string
+          description: Filter by Entity Account Number or Reference
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - o
+              - c
+          description: Status o=open (DRAFT, APPROVED, IN_PROGRESS) or c=closed (COMPLETE, CANCELED, REVERSED)
+        - in: query
+          name: unlinked
+          schema:
+            type: boolean
+          description: Return unlinked transactions only. When using grouped transactions, each transaction in a group
+            is normally linked to the previous using the linkedTo field.
+        - in: query
+          name: linkedTo
+          schema:
+            type: number
+          description: Return the linked transactions to the provided transactionId in this parameter.
+        - in: query
+          name: groupTyp
+          schema:
+            type: string
+          description: Filter by group Type. This is the most commonly used filter for transaction grouping.
+        - in: query
+          name: groupRef
+          schema:
+            type: string
+          description: Filter by group reference.
+        - in: query
+          name: groupSta
+          schema:
+            type: string
+          description: Filter by group reference.
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+          description: Filter by Entity Account Number.
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+          description: Filter by Entity Account Number.
+        - in: query
+          name: meta
+          schema:
+            type: string
+          description: Filter by transaction metadata query criteria.
+          examples:
+            Query on a top level key:
+              value:
+                meta=@>'{"meta_key": 203498}'
+            Query on an matching array element:
+              value:
+                meta=@>'[{ "meta_key": 203498 }]'
+        - in: query
+          name: starting_after
+          schema:
+            type: integer
+          description: A cursor for use in pagination. `offset` is an index value that defines your place in the list.
+            For instance, if you make a list request and receive 100 objects, your subsequent call can include
+            `starting_after=100` in order to fetch the next page of the list.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: A limit on the number of objects to be returned, between 1 and 100.
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum:
+              - oldest_first
+              - newest_first
+          description: Order reults by older records first or newer records first. If not specified, defaults to
+            oldest_first.
+        - in: query
+          name: order_by
+          schema:
+            type: string
+            enum:
+              - postdate
+              - created
+          description: Order by postdate or created date. Default is to order by postdate.
+
+      responses:
+        200:
+          description: GET Transactions OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TransactionCollection'
+        '404':
+          description: Account not found in COA
+        '401':
+          description: Unauthorized
+  ### SPECIFIC TRANSACTION
+  /transaction/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: ledger Transaction ID or Reference
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Ledger Resources
+      description: Get individual transaction
+      operationId: getTransaction
+      x-mojo-to: Main#getTransaction
+      responses:
+        '200':
+          description: Transaction response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+        '401':
+          description: Unauthorized
+    put:
+      tags:
+        - Ledger Resources
+      description: Change transaction state, add line, or reverse
+      operationId: putTransaction
+      x-mojo-to: Main#putTransaction
+      requestBody:
+        description: Transaction Body
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TransactionState'
+                - $ref: '#/components/schemas/TransactionLine'
+                - $ref: '#/components/schemas/TransactionReversal'
+      responses:
+        '200':
+          description: Transaction response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        default:
+          description: Update Transaction Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  ###########################
+  ##     J O U R N A L     ##
+  ###########################
+
+  /journal:
+    parameters:
+      - in: query
+        name: account
+        description: Account Number
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: subaccount
+        description: If provided will filter for a specific sub-account of the account.
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: transactionId
+        description: If provided will filter journal entries for a specific transaction.
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: from_date
+        schema:
+          type: string
+          format: date-time
+        description: Filter entries from_date.
+      - in: query
+        name: to_date
+        schema:
+          type: string
+          format: date-time
+        description: Filter entries to_date.
+      - in: query
+        name: starting_after
+        schema:
+          type: integer
+        description: A cursor for use in pagination. `offset` is an index value that defines your place in the list.
+          For instance, if you make a list request and receive 100 objects, your subsequent call can include
+          `starting_after=100` in order to fetch the next page of the list.
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: A limit on the number of objects to be returned, between 1 and 100.
+      - in: query
+        name: order
+        schema:
+          type: string
+          enum:
+            - oldest_first
+            - newest_first
+        description: Order reults by older records first or newer records first. If not specified, defaults to
+          oldest_first.
+      - in: query
+        name: order_by
+        schema:
+          type: string
+          enum:
+            - postdate
+            - created
+        description: Order by postdate or created date. Default is to order by postdate.
+    get:
+      tags:
+        - Ledger Resources
+      description: Get journal entries
+      operationId: getJournal
+      x-mojo-to: Main#getJournal
+      responses:
+        200:
+          description: Get journal OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Journal'
+        '401':
+          description: Unauthorized
+
+  ###########################
+  ##     B A L A N C E     ##
+  ###########################
+
+  /balance:
+    parameters:
+      - in: query
+        name: account
+        description: Account Number
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: entity
+        description: Entity Account Number. If proivided will filter all sub-Accounts related to that Entity.
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: subaccount
+        description: If proivided will filter for a specific sub-account of the account.
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: to_date
+        schema:
+          type: string
+          format: date-time
+        description: Calculate balance to a specific postdate.
+      - in: query
+        name: to_datec
+        schema:
+          type: string
+          format: date-time
+        description: Calculate balance to a specific created date.
+      - in: query
+        name: all
+        description: If proivided and 'true' will include accounts without any transactions.
+        required: false
+        schema:
+          type: string
+    get:
+      tags:
+        - Ledger Resources
+      description: Get simple balance
+      operationId: getBalance
+      x-mojo-to: Main#getBalance
+      responses:
+        200:
+          description: Get balance OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '401':
+          description: Unauthorized
+
+
+
+  ###########################
+  ##       B A P I S       ##
+  ###########################
+
+  /bapi/{name}:
+    parameters:
+      - name: name
+        in: path
+        description: BAPI Name
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - Ledger Resources
+      description: Execute a Business API
+      operationId: postBapi
+      x-mojo-to: Bapi#postBapi
+      requestBody:
+        description: BAPI Parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/None'
+      responses:
+        '200':
+          description: Transaction response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/None'
+        default:
+          description: Update Transaction Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - Ledger Resources
+      description: Execute a Business API
+      operationId: getBapi
+      x-mojo-to: Bapi#getBapi
+      responses:
+        '200':
+          description: Transaction response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/None'
+        default:
+          description: Update Transaction Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  #############################################################
+  #           A D M I N    R E S O U R C E S
+  #############################################################
+  /coa:
+    post:
+      tags:
+        - Admin Resources
+      description: Creates a new Account in COA
+      operationId: postCOA
+      x-mojo-to: Main#postCOA
+      requestBody:
+        description: COA Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAccount'
+      responses:
+        '201':
+          description: New COA Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        default:
+          description: New COA Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /coa/{account}:
+    parameters:
+      - in: path
+        name: account
+        required: true
+        schema:
+          type: string
+    get:
+      description: Obtain Account Detail from COA
+      operationId: getCOA
+      x-mojo-to: Main#getCOA
+      responses:
+        200:
+          description: Get account OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found in COA
+        '401':
+          description: Unauthorized
+    delete:
+      description: Delete Account from COA
+      operationId: deleteCOA
+      x-mojo-to: Main#deleteCOA
+      tags:
+        - Admin Resources
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Delete Account Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Account not found in COA
+        '401':
+          description: Unauthorized
+  /entities:
+    post:
+      tags:
+        - Admin Resources
+      description: Creates a new Entity
+      operationId: postEntity
+      x-mojo-to: Main#postEntity
+      requestBody:
+        description: Entity Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewEntity'
+      responses:
+        '201':
+          description: New Entity Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        default:
+          description: New Entity Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /subaccts:
+    post:
+      tags:
+        - Admin Resources
+      description: Creates a new Subaccount
+      operationId: postSubacct
+      x-mojo-to: Main#postSubacct
+      requestBody:
+        description: Subaccount  Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSubacct'
+      responses:
+        '201':
+          description: New Book Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subacct'
+        default:
+          description: New Book Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /rbcheck:
+    parameters:
+      - in: query
+        name: method
+        description: Use 'nok' to only return discrepancies; should return an empty set if running balance is healthy.
+          Use 'all' to get full report or 'ok' to return only matching balances.
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Ledger Resources
+      description: Running balance health report. This method is database intensive used only for system health check,
+        usually run in a periodic cron job.
+      operationId: getBalanceCheck
+      x-mojo-to: Main#getBalanceCheck
+      responses:
+        200:
+          description: Get balance OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceCheck'
+        '401':
+          description: Unauthorized
+#############################################################
+#       C O M P O N E N T S    A N D     S C H E M A S
+#############################################################
+components:
+  schemas:
+    ### Account
+    NewAccount:
+      type: object
+      required:
+        - account
+        - description
+        - type
+        - heading
+      properties:
+        account:
+          type: string
+          description: Account number
+        description:
+          type: string
+          description: Account Description
+        type:
+          type: string
+          enum:
+            - ASSET
+            - LIABILITY
+            - EQUITY
+            - INCOME
+            - EXPENSE
+          description: Account Type
+        heading:
+          type: boolean
+          description: Is this account a header
+    Account:
+      allOf:
+        - $ref: '#/components/schemas/NewAccount'
+        - type: object
+      required:
+        - drcr
+      properties:
+        drcr:
+          type: string
+          description: DrCr Type
+          enum: [ DR, CR ]
+    ### ENTITIES AND SUBACCOUNTS
+    NewEntity:
+      type: object
+      required:
+        - name
+        - reference
+        - type
+      properties:
+        name:
+          type: string
+          description: Name of the person, organization or thing.
+        reference:
+          type: string
+          description: An alphanumeric ID that uniquely identifies the entity and will be used to search by.
+        type:
+          type: string
+          description: Type of entity.
+          enum:
+            - PERSON
+            - ORGANIZATION
+            - OTHER
+        subtype:
+          type: string
+          description: Entity subtype. This is implementation dependent but normal values include CUSTOMER, VENDOR and
+            PARTNER. Customize the enum below if different ones are supported in your impoementation.
+          enum:
+            - CUSTOMER
+            - VENDOR
+            - PARTNER
+        meta:
+          type: string
+          description: Additional metadata about the entity in JSON string format. This can be used to add dynamic fields
+            to the entity and/or to help link the entity to external systems.
+        notes:
+          type: string
+          description: Any additional notes about the entity. Can also be used to hold addtional data for system customization.
+    Entity:
+      allOf:
+        - $ref: '#/components/schemas/NewEntity'
+        - type: object
+      required:
+        - accountNumber
+      properties:
+        id:
+          type: string
+          description: Entity Unique identifier. Save this id for lookup if you did not specify a Reference when
+            creating the entity.
+        accountNumber:
+          type: string
+          description: Account number. The ledger computes a simple numerical account number that can be used to uniquely
+            identify the entity in the system. This number can be used as part of the subaccount numbers for this entity,
+            to easily enforce uniqueness amongts subaccounts.
+    NewSubacct:
+      type: object
+      required:
+        - subaccount
+        - account
+        - owner
+      properties:
+        subaccount:
+          type: string
+          description: Alphanumeric account number for the subaccount.
+        account:
+          type: string
+          description: Alphanumeric account number of the parent in the Chart of Accounts
+        type:
+          description: Subaccount type. Used mostly for reports and filtering.  This is implementation dependent but
+            normal values include STANDARD, TRANSIT, FBO, etc. Customize the enum below if different ones are supported in
+            your impoementation.
+          enum:
+            - STANDARD
+            - TRANSIT
+            - FBO
+            - JOINT
+            - BUDGET
+            - CC
+        description:
+          type: string
+          description: Textual description for the subaccount as to appear in balances.
+        owner:
+          type: string
+          description: The accountNumber of the entity who owns this subaccount.
+        notes:
+          type: string
+          description: Any additional notes about the subaccount. Can also be used to hold data for system customization.
+    Subacct:
+      allOf:
+        - $ref: '#/components/schemas/NewSubacct'
+        - type: object
+      properties:
+        id:
+          type: string
+          description: Subaccount Unique identifier
+    ### TRANSACTION
+    NewTransaction:
+      type: object
+      properties:
+        reference:
+          type: string
+          description: Unique alphanumeric identifier for this transaction.
+        description:
+          type: string
+          description: Optional Description
+        state:
+          type: string
+          description: Must exist in the DB.
+            Default states are DRAFT,APPROVED,IN_PROGRESS,COMPLETE,CLOSED,CANCELED.
+            If left blank will default to DRAFT and will not create GL entries until APPROVED.
+        entity:
+          type: string
+          description: Main entity associated with this transaction, if any.
+            Supports both an entity accountNumber or a Reference
+        postDate:
+          type: string
+          format: date-time
+          description: Date in  RFC 3339 format YYYY-DD-MM The date the transaction was actually posted
+            accounting-wise. May differ from the date the Transaction was actually posted to
+            the API, but cannot be in the future. Defaults to the server's current date and time.
+        meta:
+          type: string
+          description: Optional metadata about the transaction in JSON string format. This can be used to add dynamic fields
+            to the transaction and/or to help link the transaction to external systems.
+        dataIn:
+          type: string
+          description: Optional JSON Data to log any input data for audit or reporting. The data will be recorded
+            into the specific state that the transaction is created in.
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewTransactionLine'
+          description: Transaction lines.
+    Transaction:
+      allOf:
+        - $ref: '#/components/schemas/NewTransaction'
+        - type: object
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: number
+          description: System generated simple unique transaction identifier (~8 digits)
+    NewTransactionLine:
+      type: object
+      required:
+        - account
+        - amount
+        - entry
+      properties:
+        reference:
+          type: string
+          description: A reference for this line item (sku, check number, note, etc.)
+        description:
+          type: string
+          description: Any additional comments about the line item (item description,
+            note purpose, etc.)
+        account:
+          type: string
+          description: Account number. This can be a CoA account or a subaccount.
+        amount:
+          type: number
+        entry:
+          enum:
+            - DEBIT
+            - CREDIT
+          description: Transaction lines must be either CREDIT or DEBIT. The system will validate that both total
+            amounts are equal. The order in which each DEBIT or CREDIT is presented will be respected. For better
+            and cleaner ledger reports, you should follow journaling best practices (DEBITs first, then CREDITs).
+    TransactionCommon:
+      type: object
+      properties:
+        reverse:
+          type: boolean
+        reference:
+          type: string
+        groupTyp:
+          type: string
+        groupSta:
+          type: string
+        linkedTo:
+          type: string
+        description:
+          type: string
+        notes:
+          type: string
+        meta:
+          type: string
+        postDate:
+          type: string
+    TransactionLine:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/NewTransactionLine'
+      anyOf:
+        - $ref: '#/components/schemas/TransactionCommon'
+    TransactionState:
+      type: object
+      required:
+        - newState
+      properties:
+        newState:
+          type: string
+      anyOf:
+        - $ref: '#/components/schemas/TransactionCommon'
+    TransactionReversal:
+      type: object
+      required:
+        - reverse
+      properties:
+        reverse:
+          type: boolean
+      anyOf:
+        - $ref: '#/components/schemas/TransactionCommon'
+    TransactionCollection:
+      type: object
+      properties:
+        has_more:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    Balance:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BalanceAccount'
+          description: Balance accounts.
+        totalDebit:
+          type: number
+        totalCredit:
+          type: number
+    BalanceAccount:
+      type: object
+      properties:
+        account:
+          type: string
+        description:
+          type: string
+        debits:
+          type: number
+        credits:
+          type: number
+        balance:
+          type: number
+    Journal:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalEntry'
+          description: Journal entries.
+        totalDebit:
+          type: number
+        totalCredit:
+          type: number
+    JournalEntry:
+      type: object
+      properties:
+        account:
+          type: string
+        description:
+          type: string
+        subaccount:
+          type: string
+        subacctDesc:
+          type: string
+        debit:
+          type: number
+        credit:
+          type: number
+        transactionId:
+          type: number
+    BalanceCheck:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BalanceCheckAccount'
+          description: Running balance check report.
+    BalanceCheckAccount:
+      type: object
+      properties:
+        account:
+          type: string
+        drcr:
+          type: string
+        acctdesc:
+          type: string
+        subacct:
+          type: string
+        subacctdesc:
+          type: string
+        debits:
+          type: number
+        credits:
+          type: number
+        running_balance:
+          type: number
+        actual_balance:
+          type: number
+        balance_check:
+          type: string
+    ### ERRORS STRUCTURE
+    Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+    ErrorItem:
+      type: object
+      properties:
+        message:
+          type: string
+        path:
+          type: string
+    None:
+      type: object
